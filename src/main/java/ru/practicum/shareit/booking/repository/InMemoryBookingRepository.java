@@ -1,8 +1,10 @@
 package ru.practicum.shareit.booking.repository;
 
 import lombok.extern.slf4j.Slf4j;
-import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.Status;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -60,7 +62,7 @@ public class InMemoryBookingRepository implements BookingRepository {
     }
 
     @Override
-    public Optional<Booking> getById(Long id) {
+    public Optional<Booking> findById(Long id) {
         if (id == null) {
             return Optional.empty();
         }
@@ -103,6 +105,52 @@ public class InMemoryBookingRepository implements BookingRepository {
         return bookingMap.values().stream()
                 .filter(booking -> itemId.equals(booking.getItem().getId()))
                 .collect(Collectors.toList());
+    }
+
+    // затычки
+    @Override
+    public List<Booking> findCurrentByBookerId(Long bookerId, LocalDateTime now) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findPastByBookerId(Long bookerId, LocalDateTime now) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findFutureByBookerId(Long bookerId, LocalDateTime now) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findByBookerUserIdAndStatus(Long bookerId, Status status) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findCurrentByOwnerId(Long ownerId, LocalDateTime now) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findPastByOwnerId(Long ownerId, LocalDateTime now) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findFutureByOwnerId(Long ownerId, LocalDateTime now) {
+        return List.of();
+    }
+
+    @Override
+    public List<Booking> findByOwnerUserIdAndStatus(Long ownerId, Status status) {
+        return List.of();
+    }
+
+    @Override
+    public boolean existsByBookerIdAndItemIdAndStatusAndEndBefore(Long bookerId, Long itemId, Status status, LocalDateTime end) {
+        return false;
     }
 
     private long generateId() {

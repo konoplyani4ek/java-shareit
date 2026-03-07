@@ -4,10 +4,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import ru.practicum.shareit.booking.repository.InMemoryBookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.item.ItemController;
 import ru.practicum.shareit.item.ItemService;
+import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
+import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.InMemoryItemRepository;
 import ru.practicum.shareit.request.repository.InMemoryItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
@@ -25,6 +30,9 @@ class ItemControllerTest {
     private InMemoryItemRepository itemRepository;
     private InMemoryUserRepository userRepository;
     private InMemoryItemRequestRepository itemRequestRepository;
+    private InMemoryBookingRepository bookingRepository;
+    private CommentRepository commentRepository;
+
 
     private User owner;
     private User otherUser;
@@ -34,7 +42,9 @@ class ItemControllerTest {
         itemRepository = new InMemoryItemRepository();
         userRepository = new InMemoryUserRepository();
         itemRequestRepository = new InMemoryItemRequestRepository();
-        itemService = new ItemService(itemRepository, userRepository, itemRequestRepository);
+        bookingRepository = new InMemoryBookingRepository();
+        commentRepository = Mockito.mock(CommentRepository.class);
+        itemService = new ItemService(itemRepository, userRepository, itemRequestRepository, bookingRepository, commentRepository);
         itemController = new ItemController(itemService);
 
         owner = userRepository.create(User.builder()
@@ -48,8 +58,16 @@ class ItemControllerTest {
                 .build());
     }
 
-    private ItemDto makeItemDto(String name, String description, Boolean available) {
-        return ItemDto.builder()
+    private ItemCreateDto makeItemDto(String name, String description, Boolean available) {
+        return ItemCreateDto.builder()
+                .name(name)
+                .description(description)
+                .available(available)
+                .build();
+    }
+
+    private ItemUpdateDto makeItemUpdateDto(String name, String description, Boolean available) {
+        return ItemUpdateDto.builder()
                 .name(name)
                 .description(description)
                 .available(available)
@@ -106,7 +124,7 @@ class ItemControllerTest {
         @DisplayName("обновление всех полей")
         void shouldUpdateAllFields() {
             ItemDto result = itemController.updateItem(owner.getId(), itemId,
-                    makeItemDto("Перфоратор", "Мощный", false));
+                    makeItemUpdateDto("Перфоратор", "Мощный", false));
 
             assertEquals(itemId, result.getId());
             assertEquals("Перфоратор", result.getName());
@@ -118,7 +136,7 @@ class ItemControllerTest {
         @DisplayName("частичное обновление — только name")
         void shouldUpdateOnlyName() {
             ItemDto result = itemController.updateItem(owner.getId(), itemId,
-                    ItemDto.builder().name("Новое имя").build());
+                    ItemUpdateDto.builder().name("Новое имя").build());
 
             assertEquals("Новое имя", result.getName());
             assertEquals("Простая дрель", result.getDescription());
@@ -129,7 +147,7 @@ class ItemControllerTest {
         @DisplayName("частичное обновление — только description")
         void shouldUpdateOnlyDescription() {
             ItemDto result = itemController.updateItem(owner.getId(), itemId,
-                    ItemDto.builder().description("Новое описание").build());
+                    ItemUpdateDto.builder().description("Новое описание").build());
 
             assertEquals("Дрель", result.getName());
             assertEquals("Новое описание", result.getDescription());
@@ -139,7 +157,7 @@ class ItemControllerTest {
         @DisplayName("частичное обновление — только available")
         void shouldUpdateOnlyAvailable() {
             ItemDto result = itemController.updateItem(owner.getId(), itemId,
-                    ItemDto.builder().available(false).build());
+                    ItemUpdateDto.builder().available(false).build());
 
             assertFalse(result.getAvailable());
             assertEquals("Дрель", result.getName());
@@ -150,7 +168,7 @@ class ItemControllerTest {
         void shouldThrowWhenNotOwner() {
             assertThrows(ForbiddenException.class,
                     () -> itemController.updateItem(otherUser.getId(), itemId,
-                            makeItemDto("Хак", "Хак", true)));
+                            makeItemUpdateDto("Хак", "Хак", true)));
         }
 
         @Test
@@ -158,7 +176,7 @@ class ItemControllerTest {
         void shouldThrowWhenUserNotFound() {
             assertThrows(NoSuchElementException.class,
                     () -> itemController.updateItem(999L, itemId,
-                            makeItemDto("Хак", "Хак", true)));
+                            makeItemUpdateDto("Хак", "Хак", true)));
         }
 
         @Test
@@ -166,7 +184,7 @@ class ItemControllerTest {
         void shouldThrowWhenItemNotFound() {
             assertThrows(NoSuchElementException.class,
                     () -> itemController.updateItem(owner.getId(), 999L,
-                            makeItemDto("Хак", "Хак", true)));
+                            makeItemUpdateDto("Хак", "Хак", true)));
         }
     }
 

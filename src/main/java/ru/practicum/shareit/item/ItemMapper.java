@@ -1,9 +1,13 @@
 package ru.practicum.shareit.item;
 
+import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ItemMapper {
 
@@ -12,17 +16,21 @@ public class ItemMapper {
                 .id(item.getId())
                 .name(item.getName())
                 .description(item.getDescription())
-                .available(item.getIsAvailable())
+                .available(item.getAvailable())
                 .requestId(item.getRequest() != null ? item.getRequest().getId() : null)
+                .comments(item.getComments() != null
+                        ? item.getComments().stream()
+                        .map(CommentMapper::toDto)
+                        .collect(Collectors.toList())
+                        : List.of())
                 .build();
     }
 
-    public static Item toEntity(ItemDto dto, User owner, ItemRequest request) {
+    public static Item toEntity(ItemCreateDto dto, User owner, ItemRequest request) {
         return Item.builder()
-                .id(dto.getId())
                 .name(dto.getName())
                 .description(dto.getDescription())
-                .isAvailable(dto.getAvailable())
+                .available(dto.getAvailable())
                 .owner(owner)
                 .request(request)
                 .build();

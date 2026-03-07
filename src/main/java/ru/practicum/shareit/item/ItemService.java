@@ -3,15 +3,20 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.model.Status;
+import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
-import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.*;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -24,24 +29,25 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final ItemRequestRepository itemRequestRepository;
+    private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
 
-    public ItemDto createItem(Long userId, ItemDto itemDto) {
-        log.debug("Создание вещи для userId={}, name={}", userId, itemDto.getName());
 
-        // Проверяем, что пользователь существует
-        User owner = userRepository.getById(userId)
+
+    public ItemDto createItem(Long userId, ItemCreateDto itemCreateDto) {
+        log.debug("Создание вещи для userId={}, name={}", userId, itemCreateDto.getName());
+
+        User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("Пользователь с id=" + userId + " не найден"));
 
         ItemRequest request = null;
-        if (itemDto.getRequestId() != null) {
-            request = itemRequestRepository.getById(itemDto.getRequestId())
+        if (itemCreateDto.getRequestId() != null) {
+            request = itemRequestRepository.getById(itemCreateDto.getRequestId())
                     .orElseThrow(() -> new NoSuchElementException(
-                            "Запрос с id=" + itemDto.getRequestId() + " не найден"));
+                            "Запрос с id=" + itemCreateDto.getRequestId() + " не найден"));
         }
 
-        //  DTO в Entity
-        Item item = ItemMapper.toEntity(itemDto, owner, request); // добавление от владельца
-
+        Item item = ItemMapper.toEntity(itemCreateDto, owner, request);
         Item savedItem = itemRepository.create(item);
 
         log.info("Создана вещь id={}, name={}, ownerId={}",
@@ -50,33 +56,24 @@ public class ItemService {
         return ItemMapper.toDto(savedItem);
     }
 
-    public ItemDto updateItem(Long userId, Long itemId, ItemDto itemDto) {
+    public ItemDto updateItem(Long userId, Long itemId, ItemUpdateDto itemUpdateDto) {
         log.debug("Обновление вещи itemId={} пользователем userId={}", itemId, userId);
 
-        // существование пользователя
-        User user = userRepository.getById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Пользователь с id=" + userId + " не найден"));
 
-        Item existingItem = itemRepository.getById(itemId)
+        Item existingItem = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Вещь с id=" + itemId + " не найдена"));
 
         if (!existingItem.getOwner().getId().equals(userId)) {
-            throw new ForbiddenException(
-                    "Редактировать вещь может только её владелец");
+            throw new ForbiddenException("Редактировать вещь может только её владелец");
         }
 
-        // частичное обновление
-        if (itemDto.getName() != null) {
-            existingItem.setName(itemDto.getName());
-        }
-        if (itemDto.getDescription() != null) {
-            existingItem.setDescription(itemDto.getDescription());
-        }
-        if (itemDto.getAvailable() != null) {
-            existingItem.setIsAvailable(itemDto.getAvailable());
-        }
+        if (itemUpdateDto.getName() != null) existingItem.setName(itemUpdateDto.getName());
+        if (itemUpdateDto.getDescription() != null) existingItem.setDescription(itemUpdateDto.getDescription());
+        if (itemUpdateDto.getAvailable() != null) existingItem.setAvailable(itemUpdateDto.getAvailable());
 
         Item updatedItem = itemRepository.update(existingItem);
 
@@ -88,7 +85,7 @@ public class ItemService {
     public ItemDto getItemById(Long itemId) {
 
         log.debug("Получение вещи по  itemId={}", itemId);
-        Item existingItem = itemRepository.getById(itemId)
+        Item existingItem = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Вещь с id=" + itemId + " не найдена"));
 
@@ -97,7 +94,7 @@ public class ItemService {
 
     public List<ItemDto> getItemsByOwnerId(Long userId) {
         log.debug("Получение вещей пользователя userId={}", userId);
-        userRepository.getById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Пользователь с id=" + userId + " не найден"));
 
@@ -122,5 +119,28 @@ public class ItemService {
         return items.stream()
                 .map(ItemMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public CommentDto createComment(Long userId, Long itemId, CommentCreateDto commentCreateDto) {
+        log.debug("Попытка оставить комментарий userId={}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Пользователь с id=" + userId + " не найден"));
+
+        Item existingItem = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Вещь с id=" + itemId + " не найдена"));
+
+        if (!bookingRepository.existsByBookerIdAndItemIdAndStatusAndEndBefore(userId, itemId, Status.APPROVED, LocalDateTime.now())) {
+            throw new IllegalArgumentException("Комментарий нельзя оставить заранее");
+        }
+
+        Comment comment = CommentMapper.toEntity(commentCreateDto, existingItem, user);
+        Comment saved = commentRepository.save(comment);
+
+        log.info("Добавлен комментарий id={}, itemId={}, authorId={}", saved.getId(), itemId, userId);
+
+        return CommentMapper.toDto(saved);
     }
 }

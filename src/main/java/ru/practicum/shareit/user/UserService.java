@@ -43,7 +43,7 @@ public class UserService {
     public UserDto updateUser(Long userId, UserDto userDto) {
         log.debug("Обновление пользователя userId={}", userId);
 
-        User existingUser = userRepository.getById(userId)
+        User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Пользователь с id=" + userId + " не найден"));
 
@@ -75,7 +75,7 @@ public class UserService {
     public UserDto getUserById(Long userId) {
         log.debug("Получение пользователя userId={}", userId);
 
-        User user = userRepository.getById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Пользователь с id=" + userId + " не найден"));
 
@@ -97,7 +97,7 @@ public class UserService {
     public void deleteUser(Long userId) {
         log.debug("Удаление пользователя userId={}", userId);
 
-        userRepository.getById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Пользователь с id=" + userId + " не найден"));
 

@@ -4,9 +4,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.item.ItemService;
+import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
+import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.InMemoryItemRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.repository.InMemoryItemRequestRepository;
@@ -35,7 +40,8 @@ class ItemServiceTest {
         userRepository = new InMemoryUserRepository();
         itemRepository = new InMemoryItemRepository();
         itemRequestRepository = new InMemoryItemRequestRepository();
-        itemService = new ItemService(itemRepository, userRepository, itemRequestRepository);
+        itemService = new ItemService(itemRepository, userRepository, itemRequestRepository,
+                Mockito.mock(BookingRepository.class), Mockito.mock(CommentRepository.class));
 
         owner = userRepository.create(User.builder()
                 .name("Владелец")
@@ -48,8 +54,16 @@ class ItemServiceTest {
                 .build());
     }
 
-    private ItemDto makeItemDto(String name, String description, Boolean available) {
-        return ItemDto.builder()
+    private ItemCreateDto makeItemDto(String name, String description, Boolean available) {
+        return ItemCreateDto.builder()
+                .name(name)
+                .description(description)
+                .available(available)
+                .build();
+    }
+
+    private ItemUpdateDto makeItemUpdateDto(String name, String description, Boolean available) {
+        return ItemUpdateDto.builder()
                 .name(name)
                 .description(description)
                 .available(available)
@@ -63,7 +77,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("успешное создание вещи")
         void shouldCreateItem() {
-            ItemDto dto = makeItemDto("Дрель", "Простая дрель", true);
+            ItemCreateDto dto = makeItemDto("Дрель", "Простая дрель", true);
 
             ItemDto result = itemService.createItem(owner.getId(), dto);
 
@@ -77,7 +91,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("создание вещи с available=false")
         void shouldCreateUnavailableItem() {
-            ItemDto dto = makeItemDto("Отвёртка", "Крестовая", false);
+            ItemCreateDto dto = makeItemDto("Отвёртка", "Крестовая", false);
 
             ItemDto result = itemService.createItem(owner.getId(), dto);
 
@@ -87,7 +101,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("ошибка при несуществующем пользователе")
         void shouldThrowWhenUserNotFound() {
-            ItemDto dto = makeItemDto("Дрель", "Простая дрель", true);
+            ItemCreateDto dto = makeItemDto("Дрель", "Простая дрель", true);
 
             assertThrows(NoSuchElementException.class,
                     () -> itemService.createItem(999L, dto));
@@ -96,7 +110,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("ошибка при несуществующем requestId")
         void shouldThrowWhenRequestNotFound() {
-            ItemDto dto = makeItemDto("Дрель", "Простая дрель", true);
+            ItemCreateDto dto = makeItemDto("Дрель", "Простая дрель", true);
             dto.setRequestId(999L);
 
             assertThrows(NoSuchElementException.class,
@@ -119,7 +133,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("обновление всех полей")
         void shouldUpdateAllFields() {
-            ItemDto updateDto = makeItemDto("Перфоратор", "Мощный перфоратор", false);
+            ItemUpdateDto updateDto = makeItemUpdateDto("Перфоратор", "Мощный перфоратор", false);
 
             ItemDto result = itemService.updateItem(owner.getId(), createdItem.getId(), updateDto);
 
@@ -132,7 +146,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("частичное обновление — только name")
         void shouldUpdateOnlyName() {
-            ItemDto updateDto = ItemDto.builder().name("Новое имя").build();
+            ItemUpdateDto updateDto = ItemUpdateDto.builder().name("Новое имя").build();
 
             ItemDto result = itemService.updateItem(owner.getId(), createdItem.getId(), updateDto);
 
@@ -144,7 +158,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("частичное обновление — только description")
         void shouldUpdateOnlyDescription() {
-            ItemDto updateDto = ItemDto.builder().description("Новое описание").build();
+            ItemUpdateDto updateDto = ItemUpdateDto.builder().description("Новое описание").build();
 
             ItemDto result = itemService.updateItem(owner.getId(), createdItem.getId(), updateDto);
 
@@ -155,7 +169,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("частичное обновление — только available")
         void shouldUpdateOnlyAvailable() {
-            ItemDto updateDto = ItemDto.builder().available(false).build();
+            ItemUpdateDto updateDto = ItemUpdateDto.builder().available(false).build();
 
             ItemDto result = itemService.updateItem(owner.getId(), createdItem.getId(), updateDto);
 
@@ -166,7 +180,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("ошибка при обновлении чужой вещи")
         void shouldThrowWhenNotOwner() {
-            ItemDto updateDto = makeItemDto("Хак", "Хак", true);
+            ItemUpdateDto updateDto = makeItemUpdateDto("Хак", "Хак", true);
 
             assertThrows(ForbiddenException.class,
                     () -> itemService.updateItem(otherUser.getId(), createdItem.getId(), updateDto));
@@ -175,7 +189,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("ошибка при несуществующем пользователе")
         void shouldThrowWhenUserNotFound() {
-            ItemDto updateDto = makeItemDto("Хак", "Хак", true);
+            ItemUpdateDto updateDto = makeItemUpdateDto("Хак", "Хак", true);
 
             assertThrows(NoSuchElementException.class,
                     () -> itemService.updateItem(999L, createdItem.getId(), updateDto));
@@ -184,7 +198,7 @@ class ItemServiceTest {
         @Test
         @DisplayName("ошибка при несуществующей вещи")
         void shouldThrowWhenItemNotFound() {
-            ItemDto updateDto = makeItemDto("Хак", "Хак", true);
+            ItemUpdateDto updateDto = makeItemUpdateDto("Хак", "Хак", true);
 
             assertThrows(NoSuchElementException.class,
                     () -> itemService.updateItem(owner.getId(), 999L, updateDto));

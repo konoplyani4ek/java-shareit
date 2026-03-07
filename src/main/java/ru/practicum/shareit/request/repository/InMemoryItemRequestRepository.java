@@ -2,7 +2,7 @@ package ru.practicum.shareit.request.repository;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
-import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.model.ItemRequest;
 
 import java.util.*;
 import java.util.stream.Collectors;

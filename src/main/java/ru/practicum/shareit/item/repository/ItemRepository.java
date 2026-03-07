@@ -13,7 +13,7 @@ public interface ItemRepository {
 
     void deleteById(Long id);
 
-    Optional<Item> getById(Long id);
+    Optional<Item> findById(Long id);
 
     List<Item> findAll();
 

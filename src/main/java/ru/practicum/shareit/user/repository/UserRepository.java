@@ -13,9 +13,9 @@ public interface UserRepository {
 
     void deleteById(Long id);
 
-    Optional<User> getById(Long id);
+    Optional<User> findById(Long id);
 
-    List<User> findAll();
+    List<User> findAll(); // сделать с пагинацией и fetch join?
 
     boolean existsByEmail(String email);
 }

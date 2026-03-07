@@ -59,7 +59,7 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<User> getById(Long id) {
+    public Optional<User> findById(Long id) {
         if (id == null) {
             return Optional.empty();
         }
