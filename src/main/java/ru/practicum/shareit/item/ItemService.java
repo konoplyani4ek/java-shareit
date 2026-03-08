@@ -3,6 +3,7 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.model.Status;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
@@ -33,7 +34,7 @@ public class ItemService {
     private final CommentRepository commentRepository;
 
 
-
+    @Transactional
     public ItemDto createItem(Long userId, ItemCreateDto itemCreateDto) {
         log.debug("Создание вещи для userId={}, name={}", userId, itemCreateDto.getName());
 
@@ -48,7 +49,7 @@ public class ItemService {
         }
 
         Item item = ItemMapper.toEntity(itemCreateDto, owner, request);
-        Item savedItem = itemRepository.create(item);
+        Item savedItem = itemRepository.save(item);
 
         log.info("Создана вещь id={}, name={}, ownerId={}",
                 savedItem.getId(), savedItem.getName(), userId);
@@ -56,6 +57,7 @@ public class ItemService {
         return ItemMapper.toDto(savedItem);
     }
 
+    @Transactional
     public ItemDto updateItem(Long userId, Long itemId, ItemUpdateDto itemUpdateDto) {
         log.debug("Обновление вещи itemId={} пользователем userId={}", itemId, userId);
 
@@ -75,13 +77,14 @@ public class ItemService {
         if (itemUpdateDto.getDescription() != null) existingItem.setDescription(itemUpdateDto.getDescription());
         if (itemUpdateDto.getAvailable() != null) existingItem.setAvailable(itemUpdateDto.getAvailable());
 
-        Item updatedItem = itemRepository.update(existingItem);
+        Item updatedItem = itemRepository.save(existingItem);
 
         log.info("Обновлена вещь id={}, userId={}", itemId, userId);
 
         return ItemMapper.toDto(updatedItem);
     }
 
+    @Transactional(readOnly = true)
     public ItemDto getItemById(Long itemId) {
 
         log.debug("Получение вещи по  itemId={}", itemId);
@@ -92,6 +95,7 @@ public class ItemService {
         return ItemMapper.toDto(existingItem);
     }
 
+    @Transactional(readOnly = true)
     public List<ItemDto> getItemsByOwnerId(Long userId) {
         log.debug("Получение вещей пользователя userId={}", userId);
         userRepository.findById(userId)
@@ -107,6 +111,7 @@ public class ItemService {
         return itemDtos;
     }
 
+    @Transactional(readOnly = true)
     public List<ItemDto> findAvailableItems(String nameOrDescription) {
         log.debug("Поиск вещей по тексту nameOrDescription={}", nameOrDescription);
 
@@ -121,6 +126,7 @@ public class ItemService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public CommentDto createComment(Long userId, Long itemId, CommentCreateDto commentCreateDto) {
         log.debug("Попытка оставить комментарий userId={}", userId);
 
@@ -132,7 +138,7 @@ public class ItemService {
                 .orElseThrow(() -> new NoSuchElementException(
                         "Вещь с id=" + itemId + " не найдена"));
 
-        if (!bookingRepository.existsByBookerIdAndItemIdAndStatusAndEndBefore(userId, itemId, Status.APPROVED, LocalDateTime.now())) {
+        if (!bookingRepository.existsByBookerIdAndItemIdAndStatusAndEndDateTimeBefore(userId, itemId, Status.APPROVED, LocalDateTime.now())) {
             throw new IllegalArgumentException("Комментарий нельзя оставить заранее");
         }
 

@@ -11,8 +11,8 @@ public class BookingMapper {
     public static BookingDto toDto(Booking booking) {
         return BookingDto.builder()
                 .id(booking.getId())
-                .start(booking.getStart())
-                .end(booking.getEnd())
+                .start(booking.getStartDateTime())
+                .end(booking.getEndDateTime())
                 .status(booking.getStatus())
                 .item(BookingDto.ItemInfo.builder()
                         .id(booking.getItem().getId())
@@ -26,8 +26,8 @@ public class BookingMapper {
 
     public static Booking toEntity(BookingCreateDto dto, Item item, User booker) {
         return Booking.builder()
-                .start(dto.getStart())
-                .end(dto.getEnd())
+                .startDateTime(dto.getStart())
+                .endDateTime(dto.getEnd())
                 .item(item)
                 .booker(booker)
                 .build();

@@ -38,7 +38,18 @@ public class BookingController {
             @PathVariable Long bookingId,
             @RequestParam Boolean approved
     ) {
-        return bookingService.approveBooking(userId, bookingId, approved);
+
+        // временный
+        log.warn("CONTROLLER CALLED");
+        log.debug("Запрос PATCH /bookings/{}?approved={} от пользователя userId={}",
+                bookingId, approved, userId);
+
+        BookingDto result = bookingService.approveBooking(userId, bookingId, approved);
+
+        log.info("Букинг id={} обработан пользователем userId={}, новый статус={}",
+                bookingId, userId, result.getStatus());
+
+        return result;
     }
 
     @GetMapping("/{bookingId}")
