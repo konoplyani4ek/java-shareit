@@ -8,7 +8,7 @@ import java.util.*;
 
 @Slf4j
 @Repository
-public class InMemoryUserRepository implements UserRepository {
+public class InMemoryUserRepository implements UserRepositoryInterface {
 
     private final Map<Long, User> userMap = new HashMap<>();
     private Long counter = 1L; // id
@@ -59,7 +59,7 @@ public class InMemoryUserRepository implements UserRepository {
     }
 
     @Override
-    public Optional<User> getById(Long id) {
+    public Optional<User> findById(Long id) {
         if (id == null) {
             return Optional.empty();
         }

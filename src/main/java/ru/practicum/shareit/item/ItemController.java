@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.*;
 
 import java.util.List;
 
@@ -21,20 +21,20 @@ public class ItemController {
     @ResponseStatus(HttpStatus.CREATED)
     public ItemDto createItem(
             @RequestHeader("X-Sharer-User-Id") Long userId,
-            @Valid @RequestBody ItemDto itemDto
+            @Valid @RequestBody ItemCreateDto itemCreateDto
     ) {
         log.info("POST /items - создание вещи пользователем userId={}", userId);
-        return itemService.createItem(userId, itemDto);
+        return itemService.createItem(userId, itemCreateDto);
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto updateItem(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long itemId,
-            @RequestBody ItemDto itemDto
+            @RequestBody ItemUpdateDto itemUpdateDto
     ) {
         log.info("PATCH /items/{} - обновление вещи пользователем userId={}", itemId, userId);
-        return itemService.updateItem(userId, itemId, itemDto);
+        return itemService.updateItem(userId, itemId, itemUpdateDto);
     }
 
     @GetMapping("/{itemId}")
@@ -54,4 +54,16 @@ public class ItemController {
         log.info("GET /items/search - поиск вещей по тексту: {}", text);
         return itemService.findAvailableItems(text);
     }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto createComment(
+            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @PathVariable Long itemId,
+            @RequestBody @Valid CommentCreateDto commentCreateDto
+    ) {
+        log.info("POST /items/{}/comment - добавление комментария userId={}", itemId, userId);
+        return itemService.createComment(userId, itemId, commentCreateDto);
+    }
+
+
 }

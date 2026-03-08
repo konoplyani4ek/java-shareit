@@ -1,13 +1,13 @@
 package ru.practicum.shareit.booking.repository;
 
 import lombok.extern.slf4j.Slf4j;
-import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.model.Booking;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class InMemoryBookingRepository implements BookingRepository {
+public class InMemoryBookingRepository implements BookingRepositoryInterface {
 
     private final Map<Long, Booking> bookingMap = new HashMap<>();
     private Long counter = 1L; // id
@@ -60,7 +60,7 @@ public class InMemoryBookingRepository implements BookingRepository {
     }
 
     @Override
-    public Optional<Booking> getById(Long id) {
+    public Optional<Booking> findById(Long id) {
         if (id == null) {
             return Optional.empty();
         }

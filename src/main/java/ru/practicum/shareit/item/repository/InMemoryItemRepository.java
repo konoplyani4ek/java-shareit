@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
-public class InMemoryItemRepository implements ItemRepository {
+public class InMemoryItemRepository implements ItemRepositoryInterface {
 
     private final Map<Long, Item> itemMap = new HashMap<>();
     private Long counter = 1L; // id
@@ -59,7 +59,7 @@ public class InMemoryItemRepository implements ItemRepository {
     }
 
     @Override
-    public Optional<Item> getById(Long id) {
+    public Optional<Item> findById(Long id) {
         if (id == null) {
             return Optional.empty();
         }
@@ -91,7 +91,7 @@ public class InMemoryItemRepository implements ItemRepository {
         String lowerText = text.toLowerCase();
 
         return itemMap.values().stream()
-                .filter(Item::getIsAvailable)
+                .filter(Item::getAvailable)
                 .filter(item ->
                         item.getName().toLowerCase().contains(lowerText) ||
                                 item.getDescription().toLowerCase().contains(lowerText)

@@ -3,6 +3,7 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
@@ -19,45 +20,33 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    /**
-     * Создание пользователя
-     * POST /users
-     */
+    @Transactional
     public UserDto createUser(UserDto userDto) {
         log.debug("Создание пользователя email={}", userDto.getEmail());
 
-        // Проверяем уникальность email
-        if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new ConflictException(
-                    "Пользователь с email=" + userDto.getEmail() + " уже существует");
-        }
-        User user = UserMapper.toEntity(userDto);
+        checkEmailUniqueOrThrow(userDto.getEmail());
 
-        User savedUser = userRepository.create(user);
+        User user = UserMapper.toEntity(userDto);
+        User savedUser = userRepository.save(user);
 
         log.info("Создан пользователь id={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         return UserMapper.toDto(savedUser);
     }
 
+    @Transactional
     public UserDto updateUser(Long userId, UserDto userDto) {
         log.debug("Обновление пользователя userId={}", userId);
 
-        User existingUser = userRepository.getById(userId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "Пользователь с id=" + userId + " не найден"));
+        User existingUser = getUserOrThrow(userId);
 
-        //  уникальность email если он изменяется
+        // проверка уникальности email при изменении
         if (userDto.getEmail() != null &&
                 !userDto.getEmail().equalsIgnoreCase(existingUser.getEmail())) {
-
-            if (userRepository.existsByEmail(userDto.getEmail())) {
-                throw new ConflictException(
-                        "Пользователь с email=" + userDto.getEmail() + " уже существует");
-            }
+            checkEmailUniqueOrThrow(userDto.getEmail());
         }
 
-        // Частичное обновление
+        // частичное обновление
         if (userDto.getName() != null) {
             existingUser.setName(userDto.getName());
         }
@@ -65,28 +54,26 @@ public class UserService {
             existingUser.setEmail(userDto.getEmail());
         }
 
-        User updatedUser = userRepository.update(existingUser);
+        User updatedUser = userRepository.save(existingUser);
 
         log.info("Обновлён пользователь id={}, email={}", userId, updatedUser.getEmail());
 
         return UserMapper.toDto(updatedUser);
     }
 
+    @Transactional(readOnly = true)
     public UserDto getUserById(Long userId) {
         log.debug("Получение пользователя userId={}", userId);
 
-        User user = userRepository.getById(userId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "Пользователь с id=" + userId + " не найден"));
-
+        User user = getUserOrThrow(userId);
         return UserMapper.toDto(user);
     }
 
+    @Transactional(readOnly = true)
     public List<UserDto> getAllUsers() {
         log.debug("Получение всех пользователей");
 
         List<User> users = userRepository.findAll();
-
         log.info("Найдено {} пользователей", users.size());
 
         return users.stream()
@@ -94,15 +81,25 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
         log.debug("Удаление пользователя userId={}", userId);
 
-        userRepository.getById(userId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "Пользователь с id=" + userId + " не найден"));
-
+        getUserOrThrow(userId); // проверка, что пользователь существует
         userRepository.deleteById(userId);
 
         log.info("Удалён пользователь id={}", userId);
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Пользователь с id=" + userId + " не найден"));
+    }
+
+    private void checkEmailUniqueOrThrow(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new ConflictException("Пользователь с email=" + email + " уже существует");
+        }
     }
 }
