@@ -13,6 +13,7 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class ErrorHandler {
 
+    // конфликт данных (дубль email и т.д.)
     @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflict(ConflictException e) {
@@ -20,6 +21,7 @@ public class ErrorHandler {
         return new ErrorResponse(e.getMessage());
     }
 
+    // доступ запрещён (не владелец и т.д.)
     @ExceptionHandler(ForbiddenException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleForbidden(ForbiddenException e) {
@@ -27,6 +29,7 @@ public class ErrorHandler {
         return new ErrorResponse(e.getMessage());
     }
 
+    // сущность не найдена в БД
     @ExceptionHandler(NoSuchElementException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFound(NoSuchElementException e) {
@@ -34,13 +37,15 @@ public class ErrorHandler {
         return new ErrorResponse(e.getMessage());
     }
 
+    // бизнес-логика (вещь недоступна, комментарий без букинга и т.д.)
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleIllegalArgument(IllegalArgumentException e) {
-        log.warn("Некорректный аргумент: {}", e.getMessage());
+        log.warn("Ошибка бизнес-логики: {}", e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
 
+    // всё остальное
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGenericException(Exception e) {
