@@ -1,0 +1,45 @@
+-- server/src/main/resources/schema.sql
+DROP TABLE IF EXISTS comments CASCADE;
+DROP TABLE IF EXISTS bookings CASCADE;
+DROP TABLE IF EXISTS items CASCADE;
+DROP TABLE IF EXISTS item_requests CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+CREATE TABLE IF NOT EXISTS users (
+    id    BIGSERIAL PRIMARY KEY,
+    name  VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS item_requests (
+    id           BIGSERIAL PRIMARY KEY,
+    description  VARCHAR(1000) NOT NULL,
+    requestor_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created      TIMESTAMP WITHOUT TIME ZONE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS items (
+    id           BIGSERIAL PRIMARY KEY,
+    name         VARCHAR(255) NOT NULL,
+    description  VARCHAR(1000) NOT NULL,
+    is_available BOOLEAN NOT NULL,
+    owner_id     BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    request_id   BIGINT REFERENCES item_requests (id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS bookings (
+    id              BIGSERIAL PRIMARY KEY,
+    start_date_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    end_date_time   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    item_id         BIGINT NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    booker_id       BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    status          VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+    id        BIGSERIAL PRIMARY KEY,
+    text      VARCHAR(1000) NOT NULL,
+    item_id   BIGINT NOT NULL REFERENCES items (id) ON DELETE CASCADE,
+    author_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created   TIMESTAMP WITHOUT TIME ZONE NOT NULL
+);
